@@ -5063,11 +5063,12 @@
       {"name":"ltherm.img","url":"icon.js","evaluate":true}
     ]
   },
-  {
+  { 
     "id": "bananasplit",
     "name": "Banana Split",
-    "version": "1.00",
+    "version": "1.01",
     "description": "App that tracks the amount of bananas you eat.",
+    "allow_emulator": true,
     "icon": "banana.png",
     "type": "app",
     "tags": "tool",
@@ -5075,7 +5076,7 @@
     "readme": "README.md",
     "storage": [
       {"name":"bananasplit.app.js","url":"app.js"},
-      {"name":"banana.img","url":"app-icon.js","evaluate":true}
+      {"name":"bananasplit.img","url":"app-icon.js","evaluate":true}
     ]
   }
 ]
