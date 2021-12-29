@@ -5066,7 +5066,6 @@
   {
     "id": "bananasplit",
     "name": "Banana Split",
-    "shortName": "BananaSplit",
     "version": "1.00",
     "description": "App that tracks the amount of bananas you eat.",
     "icon": "banana.png",
@@ -5075,8 +5074,8 @@
     "supports": ["BANGLEJS2"],
     "readme": "README.md",
     "storage": [
-      {"name":"bananasplit.banana.app.js","url":"banana.app.js"},
-      {"name":"banana.img","url":"icon.js","evaluate":true}
+      {"name":"bananasplit.app.js","url":"app.js"},
+      {"name":"banana.img","url":"app-icon.js","evaluate":true}
     ]
   }
 ]
