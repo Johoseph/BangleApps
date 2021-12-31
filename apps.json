@@ -5066,7 +5066,7 @@
   { 
     "id": "bananasplit",
     "name": "Banana Split",
-    "version": "1.01",
+    "version": "1.10",
     "description": "App that tracks the amount of bananas you eat.",
     "allow_emulator": true,
     "icon": "banana.png",

@@ -14,6 +14,7 @@ const views = ["total", "daily", "monthly", "yearly"];
 let currentView = [0, 1, 1];
 
 let canDrag = true;
+let canTwist = true; // Prevents twist being called on top/bottom taps
 
 const banana = {
   width: 31,
@@ -466,6 +467,8 @@ const render = (fetch, noConfig) => {
   screenConfig[currentScreen].layout.forEach(
     (content) => drawContent(content, 0) // No defaults for functions
   );
+
+  Bangle.setLCDPower(1);
 };
 
 const handleDrag = (e) => {
@@ -473,10 +476,11 @@ const handleDrag = (e) => {
     const diff = touchPoint - e.x;
 
     // Backwards swipe
-    if (diff < 0 && screenConfig[currentScreen - 1]) drawScreens("prev", -diff);
+    if (diff < 0 && currentScreen !== 0 && currentScreen !== 3)
+      drawScreens("prev", -diff);
 
     // Forwards swipe
-    if (diff >= 0 && screenConfig[currentScreen + 1])
+    if (diff >= 0 && currentScreen !== 2 && currentScreen !== 3)
       drawScreens("next", vw - diff);
   } else {
     touchPoint = e.x;
@@ -486,17 +490,18 @@ const handleDrag = (e) => {
 const handleDrop = (e) => {
   let diff = touchPoint - e.x;
   const newPage = Math.abs(diff / vw) >= swipePercentage;
-  const pxPerDraw = 8;
-  const time = 10;
+  const pxPerDraw = 25;
+  const time = 50;
 
   if (newPage) {
     // Go to previous
-    if (diff < 0 && screenConfig[currentScreen - 1]) {
+    if (diff < 0 && currentScreen !== 0 && currentScreen !== 3) {
       let interval = setInterval(() => {
-        if (-diff <= vw) {
+        if (-diff < vw) {
           drawScreens("prev", -diff);
-          diff = -(diff - pxPerDraw) > vw ? diff - 1 : diff - pxPerDraw;
+          diff = -(diff - pxPerDraw) > vw ? -vw : diff - pxPerDraw;
         } else {
+          drawScreens("prev", vw);
           currentScreen--;
           clearInterval(interval);
         }
@@ -504,35 +509,38 @@ const handleDrop = (e) => {
     }
 
     // Go to next
-    if (diff >= 0 && screenConfig[currentScreen + 1]) {
+    if (diff >= 0 && currentScreen !== 2 && currentScreen !== 3) {
       let interval = setInterval(() => {
-        if (diff <= vw) {
+        if (diff < vw) {
           drawScreens("next", vw - diff);
-          diff = diff + pxPerDraw > vw ? diff + 1 : diff + pxPerDraw;
+          diff = diff + pxPerDraw > vw ? vw : diff + pxPerDraw;
         } else {
+          drawScreens("next", 0);
           currentScreen++;
           clearInterval(interval);
         }
       }, time);
     }
   } else {
-    if (diff < 0 && screenConfig[currentScreen - 1]) {
+    if (diff < 0 && currentScreen !== 0 && currentScreen !== 3) {
       let interval = setInterval(() => {
-        if (-diff >= 0) {
+        if (-diff > 0) {
           drawScreens("prev", -diff);
-          diff = diff + pxPerDraw > 0 ? diff + 1 : diff + pxPerDraw;
+          diff = diff + pxPerDraw > 0 ? 0 : diff + pxPerDraw;
         } else {
+          drawScreens("prev", 0);
           clearInterval(interval);
         }
       }, time);
     }
 
-    if (diff >= 0 && screenConfig[currentScreen + 1]) {
+    if (diff >= 0 && currentScreen !== 2 && currentScreen !== 3) {
       let interval = setInterval(() => {
-        if (diff >= 0) {
+        if (diff > 0) {
           drawScreens("next", vw - diff);
-          diff = -(diff - pxPerDraw) > 0 ? diff - 1 : diff - pxPerDraw;
+          diff = -(diff - pxPerDraw) > 0 ? 0 : diff - pxPerDraw;
         } else {
+          drawScreens("next", vw);
           clearInterval(interval);
         }
       }, time);
@@ -559,7 +567,10 @@ const addBanana = (doesFit) => {
   data.unshift(entry);
 
   require("Storage").writeJSON("banana-split-storage", data);
+  currentScreen = doesFit === 1 ? 1 : 2;
   render(true);
+
+  confettiCannon(doesFit);
 };
 
 const removeBanana = (doesFit) => {
@@ -573,9 +584,8 @@ const removeBanana = (doesFit) => {
   if (remove !== -1) data.splice(remove, 1);
 
   require("Storage").writeJSON("banana-split-storage", data);
+  currentScreen = doesFit === 1 ? 1 : 2;
   render(true);
-
-  confettiCannon(doesFit);
 };
 
 const getY = (x, index) => {
@@ -601,7 +611,8 @@ const confettiCannon = (doesFit) => {
 
   canDrag = false;
 
-  const time = 10;
+  const dx = 30;
+  const time = 150;
   let points = [];
 
   for (let i = 0; i < 6; i++) {
@@ -618,8 +629,8 @@ const confettiCannon = (doesFit) => {
       const p = points[i];
       g.drawImage(p.image, p.x, getY(p.x, i), { rotate: p.rotate });
 
-      if (i < 3) p.x += 2;
-      else p.x -= 2;
+      if (i < 3) p.x += dx;
+      else p.x -= dx;
       if (i % 2 === 0) p.rotate += 0.1;
       else p.rotate -= 0.1;
     }
@@ -627,8 +638,9 @@ const confettiCannon = (doesFit) => {
 
   setTimeout(() => {
     canDrag = true;
+    render(false);
     clearInterval(interval);
-  }, 1000);
+  }, 1200);
 };
 
 Bangle.on("drag", (e) => {
@@ -643,13 +655,16 @@ Bangle.on("drag", (e) => {
 });
 
 Bangle.on("tap", (tap) => {
-  if (tap.dir === "right") {
+  canTwist = false;
+  setTimeout(() => (canTwist = true), 2000);
+
+  if (tap.dir === "top") {
     addBanana(tap.double ? 1 : 0);
     Bangle.buzz(200, 1);
-    if (tap.double) setTimeout(() => Bangle.buzz(200, 1), 400);
+    if (tap.double) setTimeout(() => Bangle.buzz(200, 1), 300);
   }
 
-  if (tap.dir === "left") {
+  if (tap.dir === "bottom") {
     let canRemove = false;
 
     // Remove 'fit' banana
@@ -665,11 +680,12 @@ Bangle.on("tap", (tap) => {
   }
 });
 
-Bangle.on("twist", () => confettiCannon(2));
+Bangle.on("twist", () => setTimeout(() => canTwist && confettiCannon(2), 500));
 
 setWatch(
   () => {
-    currentScreen = 0;
+    if (currentScreen === 3) currentScreen = 0;
+    else currentScreen = 3;
     render(false);
   },
   BTN1,
